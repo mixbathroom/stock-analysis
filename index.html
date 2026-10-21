@@ -105,7 +105,7 @@ details summary{cursor:pointer;color:var(--muted)}
 <div class="wrap">
   <header>
     <div class="topbar">
-      <h1>วิเคราะห์สต็อกสินค้า <span class="ver" title="เวอร์ชัน 1.7 · 22 ต.ค. 2569">v1.7</span></h1>
+      <h1>วิเคราะห์สต็อกสินค้า <span class="ver" title="เวอร์ชัน 1.8 · 22 ต.ค. 2569">v1.8</span></h1>
       <button class="gear" id="gearBtn" aria-label="ตั้งค่าการจับคู่รหัส Beger และราคาทุน" title="ตั้งค่าการจับคู่รหัส Beger และราคาทุน"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="dot" id="gearDot" hidden></span></button>
     </div>
   </header>
@@ -826,7 +826,12 @@ function sheetFrom(rows,cols){
   ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:tr,c:cols.length-1}});
   return ws;
 }
-function exportName(ext){var d=new Date();return 'stock_long_'+fmtDate(d).replace(/-/g,'')+'.'+ext}
+// ชื่อไฟล์: Stock วว.ดด.ปปปป_ห้างที่อยู่ในข้อมูล เช่น Stock 22.10.2026_DH_HH_HO_HS.xlsx
+function exportName(ext,rows){
+  var d=new Date(),has={};(rows||[]).forEach(function(r){has[r.chain]=1});
+  var ch=['DH','HH','HO','HS'].filter(function(c){return has[c]});
+  return 'Stock '+pad2(d.getDate())+'.'+pad2(d.getMonth()+1)+'.'+d.getFullYear()+(ch.length?'_'+ch.join('_'):'')+'.'+ext;
+}
 async function saveFile(filename,data){
   try{
     if(window.claude&&typeof window.claude.use==='function'){
@@ -859,7 +864,7 @@ $('btnXlsx').addEventListener('click',function(){
           z[n]=enc.encode(x)}});
         out=fflate.zipSync(z,{level:6});   // บีบอัดให้ไฟล์เล็กลง ~3 เท่า
       }catch(e){}}
-      saveFile(exportName('xlsx'),new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+      saveFile(exportName('xlsx',rows),new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
     }catch(e){toast('สร้างไฟล์ไม่สำเร็จ: '+e.message)}
     btn.disabled=false;btn.textContent='ดาวน์โหลด Excel';
   },30);
@@ -869,7 +874,7 @@ $('btnCsv').addEventListener('click',function(){
   var q=function(v){v=v==null?'':String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
   var lines=[cv.cols.map(function(c){return q(c[1])}).join(',')];
   cv.rows.forEach(function(r){lines.push(cv.cols.map(function(c){return q(r[c[0]])}).join(','))});
-  saveFile(exportName('csv').replace('stock_long','stock_'+state.view),'﻿'+lines.join('\r\n'));
+  saveFile(exportName('csv',filtered()),'﻿'+lines.join('\r\n'));
 });
 
 /* ---------- wiring ---------- */
